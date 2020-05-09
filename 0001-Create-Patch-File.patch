@@ -1,0 +1,52 @@
+From 7ae444f0a49ed4bba29cc0d2af313610f96cdd80 Mon Sep 17 00:00:00 2001
+From: Achal <yashmukaty1@gmail.com>
+Date: Sat, 9 May 2020 16:18:55 +0530
+Subject: [PATCH] Create Patch File
+
+---
+ .DS_Store             | Bin 0 -> 6148 bytes
+ .vscode/settings.json |   3 +++
+ client3.py            |   1 +
+ 3 files changed, 4 insertions(+)
+ create mode 100644 .DS_Store
+ create mode 100644 .vscode/settings.json
+
+diff --git a/.DS_Store b/.DS_Store
+new file mode 100644
+index 0000000000000000000000000000000000000000..5008ddfcf53c02e82d7eee2e57c38e5672ef89f6
+GIT binary patch
+literal 6148
+zcmeH~Jr2S!425mzP>H1@V-^m;4Wg<&0T*E43hX&L&p$$qDprKhvt+--jT7}7np#A3
+zem<@ulZcFPQ@L2!n>{z**<q8>++&mCkOWA81W14cNZ<zv;LbK1Poaz?KmsK2CSc!(
+z0ynLxE!0092;Krf2c+FF_Fe*7ECH>lEfg7;MkzE(HCqgga^y>{tEnwC%0;vJ&^%eQ
+zLs35+`xjp>T0<F0fCPF1$Cyrb|F7^5{eNG?83~ZUUlGt@xh*qZDeu<Z%US-OSsOPv
+j)R!Z4KLME7ReXlK;d!wEw5GODWMKRea10D2@KpjYNUI8I
+
+literal 0
+HcmV?d00001
+
+diff --git a/.vscode/settings.json b/.vscode/settings.json
+new file mode 100644
+index 0000000..3b66410
+--- /dev/null
++++ b/.vscode/settings.json
+@@ -0,0 +1,3 @@
++{
++    "git.ignoreLimitWarning": true
++}
+\ No newline at end of file
+diff --git a/client3.py b/client3.py
+index 6b19f91..b1d759f 100644
+--- a/client3.py
++++ b/client3.py
+@@ -54,6 +54,7 @@ if __name__ == "__main__":
+ 		quotes = json.loads(urllib.request.urlopen(QUERY.format(random.random())).read())
+ 
+ 		""" ----------- Update to get the ratio --------------- """
++		prices = {}
+ 		for quote in quotes:
+ 			stock, bid_price, ask_price, price = getDataPoint(quote)
+ 			prices[stock]=price
+-- 
+2.20.1 (Apple Git-117)
+
