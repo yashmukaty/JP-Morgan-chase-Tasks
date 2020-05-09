@@ -1,97 +1,120 @@
-From 175f19601e853b21a79e90a22fa89fac78d1902e Mon Sep 17 00:00:00 2001
+From e3f13c721b2edf27a4b9c8eccfdbad04727f14e2 Mon Sep 17 00:00:00 2001
 From: Achal <yashmukaty1@gmail.com>
-Date: Sat, 9 May 2020 19:44:30 +0530
+Date: Sat, 9 May 2020 22:08:28 +0530
 Subject: [PATCH] Create Patch File
 
 ---
- src/App.tsx   | 16 +++++++++++++---
- src/Graph.tsx | 15 ++++++++++++---
- 2 files changed, 25 insertions(+), 6 deletions(-)
+ src/DataManipulator.ts | 37 +++++++++++++++++++++++++------------
+ src/Graph.tsx          | 29 +++++++++++++++++------------
+ 2 files changed, 42 insertions(+), 24 deletions(-)
 
-diff --git a/src/App.tsx b/src/App.tsx
-index 0728518..7620005 100755
---- a/src/App.tsx
-+++ b/src/App.tsx
-@@ -8,6 +8,7 @@ import './App.css';
-  */
- interface IState {
-   data: ServerRespond[],
-+  showGraph:boolean,
+diff --git a/src/DataManipulator.ts b/src/DataManipulator.ts
+index f6b15ff..c5c73d1 100644
+--- a/src/DataManipulator.ts
++++ b/src/DataManipulator.ts
+@@ -1,20 +1,33 @@
+ import { ServerRespond } from './DataStreamer';
++import { ServerResponse } from 'http';
+ 
+ export interface Row {
+-  stock: string,
+-  top_ask_price: number,
+-  timestamp: Date,
++      price_abc:number,
++      price_def:number,
++      ratio:number,
++      timestamp:Date,
++      upper_bound:number,
++      lower_bound:number,
++      trigger_alert:number | undefined,
  }
  
- /**
-@@ -22,6 +23,7 @@ class App extends Component<{}, IState> {
-       // data saves the server responds.
-       // We use this state to parse data down to the child element (Graph) as element property
-       data: [],
-+      showGraph:false,
-     };
-   }
  
-@@ -29,19 +31,27 @@ class App extends Component<{}, IState> {
-    * Render Graph react component with state.data parse as property data
-    */
-   renderGraph() {
--    return (<Graph data={this.state.data}/>)
-+    if(this.state.showGraph) {
-+      return (<Graph data={this.state.data}/>)}
-   }
- 
-   /**
-    * Get new data from server and update the state with the new data
-    */
-   getDataFromServer() {
-+    let x = 0;
-+    const interval = setInterval(() => {
-     DataStreamer.getData((serverResponds: ServerRespond[]) => {
-       // Update the state by creating a new array of data that consists of
-       // Previous data in the state and the new data from server
--      this.setState({ data: [...this.state.data, ...serverResponds] });
-+      this.setState({data: serverResponds, showGraph: true,});
-     });
+ export class DataManipulator {
+-  static generateRow(serverResponds: ServerRespond[]): Row[] {
+-    return serverResponds.map((el: any) => {
+-      return {
+-        stock: el.stock,
+-        top_ask_price: el.top_ask && el.top_ask.price || 0,
+-        timestamp: el.timestamp,
+-      };
+-    })
 -  }
-+    x++;
-+    if(x>1000){
-+      clearInterval(interval);
-+    }
-+  },100);
-+}
- 
-   /**
-    * Render the App react component
++  static generateRow(serverRespond: ServerRespond[]): Row {
++  const priceABC = (serverRespond[0].top_ask.price + serverRespond[0].top_bid.price)/2;
++  const priceDEF = (serverRespond[1].top_ask.price + serverRespond[1].top_bid.price)/2;
++  const ratio = priceABC/priceDEF;
++  const upper_bound = 1 + 0.05;
++  const lower_bound = 1 - 0.05;
++  return{
++    price_abc: priceABC,
++    price_def:priceDEF,
++    ratio,
++    timestamp: (serverRespond[0].timestamp > serverRespond[1].timestamp) ? serverRespond[0].timestamp:serverRespond[1].timestamp,
++    upper_bound:upper_bound,
++    lower_bound:lower_bound,
++    trigger_alert: (ratio>upper_bound || ratio<lower_bound) ? ratio:undefined,
++
++  };
+ }
++  }
+\ No newline at end of file
 diff --git a/src/Graph.tsx b/src/Graph.tsx
-index ec1430e..e0ed2bd 100644
+index 58fb997..840e596 100644
 --- a/src/Graph.tsx
 +++ b/src/Graph.tsx
-@@ -14,7 +14,7 @@ interface IProps {
-  * Perspective library adds load to HTMLElement prototype.
-  * This interface acts as a wrapper for Typescript compiler.
-  */
--interface PerspectiveViewerElement {
-+interface PerspectiveViewerElement extends HTMLElement {
-   load: (table: Table) => void,
- }
+@@ -23,10 +23,13 @@ class Graph extends Component<IProps, {}> {
+     const elem = document.getElementsByTagName('perspective-viewer')[0] as unknown as PerspectiveViewerElement;
  
-@@ -32,8 +32,17 @@ class Graph extends Component<IProps, {}> {
- 
-   componentDidMount() {
-     // Get element to attach the table from the DOM.
--    const elem: PerspectiveViewerElement = document.getElementsByTagName('perspective-viewer')[0] as unknown as PerspectiveViewerElement;
--
-+    const elem = document.getElementsByTagName('perspective-viewer')[0] as unknown as PerspectiveViewerElement;
-+    elem.setAttribute('view','y_line');
-+    elem.setAttribute('column-pivots','["stock"]');
-+    elem.setAttribute('row-pivots','["timestamp"]');
-+    elem.setAttribute('columns','["top_ask_price"]');
-+    elem.setAttribute('aggregates', ` 
-+                      {"stock":"distinct count",
-+                      "top_ask_price":"avg",
-+                      "top_bid_price":"avg",
-+                      "timsetamp":"distinct count"}`);
-+                                      
      const schema = {
-       stock: 'string',
-       top_ask_price: 'float',
+-      stock: 'string',
+-      top_ask_price: 'float',
+-      top_bid_price: 'float',
+-      timestamp: 'date',
++      price_abc:'float',
++      price_def:'float',
++      ratio:'float',
++      timestamp:'float',
++      upper_bound:'float',
++      lower_bound:'float',
++      trigger_alert:'float',
+     };
+ 
+     if (window.perspective && window.perspective.worker()) {
+@@ -36,23 +39,25 @@ class Graph extends Component<IProps, {}> {
+       // Load the `table` in the `<perspective-viewer>` DOM reference.
+       elem.load(this.table);
+       elem.setAttribute('view', 'y_line');
+-      elem.setAttribute('column-pivots', '["stock"]');
+       elem.setAttribute('row-pivots', '["timestamp"]');
+-      elem.setAttribute('columns', '["top_ask_price"]');
++      elem.setAttribute('columns', '["ratio","lower_bound","upper_bound","trigger_alert"]');
+       elem.setAttribute('aggregates', JSON.stringify({
+-        stock: 'distinctcount',
+-        top_ask_price: 'avg',
+-        top_bid_price: 'avg',
+-        timestamp: 'distinct count',
++        price_abc:'avg',
++        price_def:'avg',
++        ratio:'avg',
++        timestamp:'distinct count',
++        upper_bound:'avg',
++        lower_bound:'avg',
++        trigger_alert:'avg',
+       }));
+     }
+   }
+ 
+   componentDidUpdate() {
+     if (this.table) {
+-      this.table.update(
++      this.table.update([
+         DataManipulator.generateRow(this.props.data),
+-      );
++        ]);
+     }
+   }
+ }
 -- 
 2.20.1 (Apple Git-117)
 
